@@ -65,7 +65,7 @@ self.addEventListener("activate", (event) => {
       if (self.registration.navigationPreload) {
         try {
           await self.registration.navigationPreload.enable();
-        } catch (_) {
+        } catch {
           /* non pris en charge */
         }
       }
@@ -148,7 +148,7 @@ async function handleNavigation(event, url) {
     }
     event.waitUntil(storePage(url, cacheKey, response.clone()));
     return response;
-  } catch (_) {
+  } catch {
     if (cached) return cached;
     const fallback = await caches.match(OFFLINE_URL, { cacheName: SHELL_CACHE });
     return fallback || new Response("Hors ligne", { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } });
@@ -216,7 +216,7 @@ async function audioCacheOnPlay(request) {
       if (!response.ok || response.type !== "basic") return response;
       await cache.put(key, response.clone());
       full = response;
-    } catch (_) {
+    } catch {
       return new Response("", { status: 504 });
     }
   }
@@ -330,7 +330,7 @@ function broadcast(message) {
     const ch = new BroadcastChannel(CHANNEL);
     ch.postMessage(message);
     ch.close();
-  } catch (_) {
+  } catch {
     /* BroadcastChannel indisponible */
   }
 }
@@ -353,12 +353,12 @@ async function sendItem(item) {
     let body = null;
     try {
       body = await res.json();
-    } catch (_) {
+    } catch {
       body = null;
     }
     const status = res.type === "opaqueredirect" ? 401 : res.status;
     return { outcome: classifyStatus(status), status, body, retryAfterMs: parseRetryAfter(res.headers.get("Retry-After")) };
-  } catch (_) {
+  } catch {
     return { outcome: "retry", status: 0, body: null, retryAfterMs: 0 };
   } finally {
     clearTimeout(timer);

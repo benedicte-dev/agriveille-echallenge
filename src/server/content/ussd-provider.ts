@@ -11,7 +11,9 @@ import type { UssdProvider } from "./ussd";
  * l'agent ; aucun SMS n'est envoyé (SPEC : SmsOutbox est un journal, pas un
  * envoi réel).
  */
-export function ussdProviderFor(farmerId: string): UssdProvider {
+export function ussdProviderFor(farmerId: string, agentId: string): UssdProvider {
+  // L'auteur réel de la saisie est l'agent qui pilote le simulateur : c'est lui qu'on journalise.
+  const meta = { channel: "USSD_SIM", onBehalfOf: farmerId };
   return {
     async alerts() {
       const rows = await prisma.alertDelivery.findMany({
@@ -35,7 +37,7 @@ export function ussdProviderFor(farmerId: string): UssdProvider {
         where: { alertId, userId: farmerId, channel: "IN_APP", status: { not: "ACKNOWLEDGED" } },
         data: { status: "ACKNOWLEDGED", acknowledgedAt: now, readAt: now },
       });
-      if (count > 0) await audit(farmerId, "alert.acknowledge", "Alert", alertId, { channel: "USSD_SIM" });
+      if (count > 0) await audit(agentId, "alert.acknowledge", "Alert", alertId, meta);
       return count > 0;
     },
 
@@ -105,7 +107,7 @@ export function ussdProviderFor(farmerId: string): UssdProvider {
         },
         select: { id: true },
       });
-      await audit(farmerId, "report.create", "PestReport", created.id, { channel: "USSD_SIM" });
+      await audit(agentId, "report.create", "PestReport", created.id, meta);
       return { ok: true, ref: created.id.slice(-6).toUpperCase() };
     },
   };

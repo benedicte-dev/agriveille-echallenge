@@ -17,25 +17,26 @@ export interface UssdStepResult {
   text: string;
   end: boolean;
   path: string[];
-  error?: string;
+  error?: "invalid" | "not_found";
 }
 
 /**
  * Rejoue le chemin USSD pour le fermier de démonstration choisi. Réservé
  * AGENT/ADMIN : la simulation lit de vraies données (alertes, météo, prix)
- * mais n'envoie jamais de SMS réel (DÉMO).
+ * mais n'envoie jamais de SMS réel (DÉMO). Les écritures éventuelles
+ * (accusé, signalement) sont journalisées au nom de l'agent.
  */
 export async function ussdStepAction(input: unknown): Promise<UssdStepResult> {
-  await requireRole("AGENT");
+  const agent = await requireRole("AGENT");
   const parsed = stepSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, text: "Requête invalide.", end: true, path: [] };
+  if (!parsed.success) return { ok: false, text: "", end: true, path: [], error: "invalid" };
 
   const farmer = await prisma.user.findFirst({
-    where: { id: parsed.data.farmerId, role: "FARMER" },
+    where: { id: parsed.data.farmerId, role: "FARMER", isActive: true },
     select: { id: true },
   });
-  if (!farmer) return { ok: false, text: "Numéro de démonstration introuvable.", end: true, path: [], error: "not_found" };
+  if (!farmer) return { ok: false, text: "", end: true, path: [], error: "not_found" };
 
-  const result = await ussdRespond(parsed.data.path, ussdProviderFor(farmer.id));
+  const result = await ussdRespond(parsed.data.path, ussdProviderFor(farmer.id, agent.id));
   return { ok: true, text: result.text, end: result.end, path: result.path };
 }

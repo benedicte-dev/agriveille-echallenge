@@ -32,7 +32,7 @@ function OfferRow({ offer, tr, dl }: { offer: BuyerOffer; tr: Tr; dl: string }) 
         <span className="font-bold">{tr("mkt.offer_total", { amount: formatFcfa(offer.quantityKg * offer.pricePerKgFcfa) })}</span>
       </p>
       <p className="text-sm text-ink-muted">
-        {l.commune.name} · {formatDate(offer.createdAt)}
+        {l.commune.name} · {formatDate(offer.createdAt, dl)}
       </p>
       {offer.message ? <p className="mt-1 text-base">« {offer.message} »</p> : null}
       {offer.status === "ACCEPTED" ? (
@@ -108,7 +108,7 @@ export default async function AcheteurPage({ searchParams }: { searchParams: Pro
         ) : (
           <ul className="flex flex-col gap-3">
             {offers.map((o) => (
-              <OfferRow key={o.id} offer={o} tr={tr} />
+              <OfferRow key={o.id} offer={o} tr={tr} dl={dateLocale(locale)} />
             ))}
           </ul>
         )}

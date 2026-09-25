@@ -1,7 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
-import type { AlertSeverity, Role } from "@prisma/client";
+import type { AlertSeverity, ReportStatus, Role } from "@prisma/client";
 
 /** Acteur autorisé (staff) : layout /agent garantit déjà AGENT ou ADMIN. */
 export type StaffActor = { id: string; role: Role };
@@ -48,6 +48,7 @@ export interface MapReport {
   lon: number;
   communeName: string;
   pestName: string | null;
+  status: ReportStatus;
   createdAt: Date;
 }
 
@@ -115,7 +116,8 @@ export async function getAgentMapData(actor: StaffActor): Promise<AgentMapData> 
         commune: { select: { lat: true, lon: true, name: true } },
       },
     }),
-    listReports(actor, { status: "PENDING", pageSize: 200 }),
+    // Tous statuts (couleur selon le statut sur la carte) ; 100 = plafond de listReportsSchema.
+    listReports(actor, { pageSize: 100 }),
   ]);
 
   const alerts: MapAlert[] = alertRows.map((a) => ({
@@ -138,6 +140,7 @@ export async function getAgentMapData(actor: StaffActor): Promise<AgentMapData> 
       lon: r.lon,
       communeName: r.communeName,
       pestName: r.pest?.nameFr ?? null,
+      status: r.status,
       createdAt: r.createdAt,
     }));
 
