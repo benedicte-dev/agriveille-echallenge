@@ -1,0 +1,567 @@
+// AgriVeille — schéma de données (source de vérité : docs/SPEC.md §3).
+// Montants en FCFA entiers, quantités en kg entiers, coordonnées en degrés décimaux (WGS84).
+// Textes multilingues : xxxFr (obligatoire), xxxFon / xxxYo (nullables, remplis par l'API 229langues).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────── Enums ───────────────────────────────
+
+enum Role {
+  FARMER
+  BUYER
+  AGENT
+  ADMIN
+}
+
+enum Locale {
+  fr
+  fon
+  yo
+}
+
+// Pôles de Développement Agricole (PDA) du Bénin. Le découpage officiel en compte 7 ;
+// le rattachement des communes dans le seed est indicatif.
+enum AgroZone {
+  PDA1 // Vallée du Niger (Malanville, Karimama)
+  PDA2 // Alibori Sud – Borgou Nord – 2KP (zone cotonnière)
+  PDA3 // Atacora Ouest
+  PDA4 // Borgou Sud – Donga – Collines
+  PDA5 // Zou – Couffo
+  PDA6 // Plateau
+  PDA7 // Ouémé – Atlantique – Mono – Littoral
+}
+
+enum PestKind {
+  PEST
+  DISEASE
+}
+
+enum PlantingStatus {
+  PLANNED
+  GROWING
+  HARVESTED
+}
+
+enum AlertType {
+  DROUGHT
+  HEAVY_RAIN
+  HEAT
+  WIND
+  PEST_RISK
+  PEST_OUTBREAK
+  SOWING_WINDOW
+  HARVEST_WINDOW
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum AlertSource {
+  AUTO_WEATHER
+  PEST_REPORT
+  AGENT_MANUAL
+}
+
+enum DeliveryChannel {
+  IN_APP
+  SMS_SIM
+  USSD_SIM
+  PUSH
+}
+
+enum DeliveryStatus {
+  SENT
+  READ
+  ACKNOWLEDGED
+}
+
+enum ReportStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+}
+
+enum Market {
+  LOCAL
+  EXPORT
+}
+
+enum ListingStatus {
+  OPEN
+  RESERVED
+  SOLD
+  CLOSED
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum LevyBasis {
+  PER_KG
+  PERCENT_VALUE
+  FLAT
+}
+
+enum DeclarationStatus {
+  SUBMITTED
+  PAID
+  VALIDATED
+  REJECTED
+}
+
+enum RegulationCategory {
+  PHYTO
+  SEEDS
+  EXPORT
+  TAX
+  LAND
+  ORGANIC
+}
+
+// ─────────────────────────── Identité / accès ───────────────────────────
+
+model User {
+  id           String    @id @default(cuid())
+  phone        String    @unique // +229XXXXXXXXXX (10 chiffres après +229)
+  pinHash      String
+  fullName     String
+  role         Role      @default(FARMER)
+  locale       Locale    @default(fr)
+  communeId    String?
+  commune      Commune?  @relation(fields: [communeId], references: [id], onDelete: SetNull)
+  organization String?
+  isActive     Boolean   @default(true)
+  failedLogins Int       @default(0)
+  lockedUntil  DateTime?
+  createdAt    DateTime  @default(now())
+  lastLoginAt  DateTime?
+
+  sessions          Session[]
+  parcels           Parcel[]
+  alertsCreated     Alert[]         @relation("AlertCreatedBy")
+  deliveries        AlertDelivery[]
+  reports           PestReport[]    @relation("ReportReporter")
+  reportsReviewed   PestReport[]    @relation("ReportReviewer")
+  listings          Listing[]
+  offers            Offer[]
+  declarations      Declaration[]   @relation("DeclarationFarmer")
+  declarationsValid Declaration[]   @relation("DeclarationValidator")
+  auditLogs         AuditLog[]
+
+  @@index([role])
+  @@index([communeId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique // SHA-256 hex du jeton ; le jeton brut n'est jamais stocké
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userAgent String?
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// Compteur de limitation de débit (fenêtre fixe). key = "<scope>:<identifiant>".
+model RateLimit {
+  key         String   @id
+  count       Int      @default(0)
+  windowStart DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([windowStart])
+}
+
+// ─────────────────────────── Référentiels (CMS) ───────────────────────────
+
+model Commune {
+  id         String   @id @default(cuid())
+  name       String   @unique
+  department String // l'un des 12 départements (voir src/lib/validation BENIN_DEPARTMENTS)
+  lat        Float
+  lon        Float
+  agroZone   AgroZone
+
+  users           User[]
+  parcels         Parcel[]
+  alerts          Alert[]
+  reports         PestReport[]
+  listings        Listing[]
+  referencePrices ReferencePrice[]
+
+  @@index([department])
+}
+
+model Crop {
+  id             String  @id @default(cuid())
+  slug           String  @unique
+  nameFr         String
+  nameFon        String?
+  nameYo         String?
+  icon           String // clé de pictogramme (src/components/icons)
+  cycleDays      Int
+  sowingMonths   Int[] // 1..12
+  harvestMonths  Int[] // 1..12
+  minRainMm      Int // besoin en pluie sur le cycle (mm)
+  optimalTempMin Float
+  optimalTempMax Float
+  notes          String?
+
+  pests           Pest[]
+  plantings       Planting[]
+  listings        Listing[]
+  referencePrices ReferencePrice[]
+  declarations    Declaration[]
+}
+
+model Pest {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  nameFr          String
+  nameFon         String?
+  nameYo          String?
+  kind            PestKind
+  crops           Crop[] // relation n-n implicite (table _CropToPest)
+  symptomsFr      String
+  symptomsFon     String?
+  symptomsYo      String?
+  preventionFr    String
+  preventionFon   String?
+  preventionYo    String?
+  treatmentFr     String
+  treatmentFon    String?
+  treatmentYo     String?
+  riskTempMin     Float?
+  riskTempMax     Float?
+  riskHumidityMin Float?
+  imageKey        String?
+
+  alerts  Alert[]
+  reports PestReport[]
+}
+
+// ─────────────────────────── Exploitation ───────────────────────────
+
+model Parcel {
+  id        String   @id @default(cuid())
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name      String
+  communeId String
+  commune   Commune  @relation(fields: [communeId], references: [id], onDelete: Restrict)
+  lat       Float
+  lon       Float
+  areaHa    Float
+  createdAt DateTime @default(now())
+
+  plantings Planting[]
+  snapshots WeatherSnapshot[]
+  alerts    Alert[]
+  reports   PestReport[]
+
+  @@index([ownerId])
+  @@index([communeId])
+}
+
+model Planting {
+  id                  String         @id @default(cuid())
+  parcelId            String
+  parcel              Parcel         @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  cropId              String
+  crop                Crop           @relation(fields: [cropId], references: [id], onDelete: Restrict)
+  sowingDate          DateTime
+  expectedHarvestDate DateTime
+  status              PlantingStatus @default(PLANNED)
+  estimatedYieldKg    Int?
+
+  @@index([parcelId, status])
+  @@index([status, expectedHarvestDate])
+}
+
+// ─────────────────────────── Monitoring ───────────────────────────
+
+model WeatherSnapshot {
+  id        String   @id @default(cuid())
+  parcelId  String
+  parcel    Parcel   @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  fetchedAt DateTime @default(now())
+  source    String   @default("open-meteo")
+  payload   Json // daily 7 j : tmax, tmin, précipitations, humidité moyenne, vent max, ET0
+  expiresAt DateTime
+
+  @@index([parcelId, fetchedAt])
+}
+
+model Alert {
+  id          String        @id @default(cuid())
+  type        AlertType
+  severity    AlertSeverity
+  source      AlertSource
+  titleFr     String
+  titleFon    String?
+  titleYo     String?
+  messageFr   String
+  messageFon  String?
+  messageYo   String?
+  adviceFr    String?
+  adviceFon   String?
+  adviceYo    String?
+  parcelId    String?
+  parcel      Parcel?       @relation(fields: [parcelId], references: [id], onDelete: SetNull)
+  communeId   String?
+  commune     Commune?      @relation(fields: [communeId], references: [id], onDelete: SetNull)
+  lat         Float?
+  lon         Float?
+  radiusKm    Float?
+  pestId      String?
+  pest        Pest?         @relation(fields: [pestId], references: [id], onDelete: SetNull)
+  reportId    String?
+  report      PestReport?   @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  validFrom   DateTime      @default(now())
+  validUntil  DateTime
+  createdById String?
+  createdBy   User?         @relation("AlertCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime      @default(now())
+  dedupKey    String        @unique // ex. DROUGHT:<parcelId>:<yyyy-mm-dd>
+
+  deliveries AlertDelivery[]
+  smsOutbox  SmsOutbox[]
+
+  @@index([parcelId, createdAt])
+  @@index([communeId, createdAt])
+  @@index([createdAt])
+  @@index([validUntil])
+  @@index([type, createdAt])
+}
+
+model AlertDelivery {
+  id             String          @id @default(cuid())
+  alertId        String
+  alert          Alert           @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel        DeliveryChannel
+  status         DeliveryStatus  @default(SENT)
+  sentAt         DateTime        @default(now())
+  readAt         DateTime?
+  acknowledgedAt DateTime?
+
+  @@unique([alertId, userId, channel])
+  @@index([userId, status])
+  @@index([alertId, status])
+}
+
+model PestReport {
+  id              String       @id @default(cuid())
+  reporterId      String
+  reporter        User         @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  parcelId        String?
+  parcel          Parcel?      @relation(fields: [parcelId], references: [id], onDelete: SetNull)
+  communeId       String
+  commune         Commune      @relation(fields: [communeId], references: [id], onDelete: Restrict)
+  lat             Float
+  lon             Float
+  pestId          String?
+  pest            Pest?        @relation(fields: [pestId], references: [id], onDelete: SetNull)
+  description     String?
+  voiceTranscript String?
+  voiceLang       String?
+  photo           Bytes? // ≤ 300 Ko, jpeg/webp/png vérifié par signature ; jamais servi depuis public/
+  photoMime       String?
+  status          ReportStatus @default(PENDING)
+  reviewedById    String?
+  reviewedBy      User?        @relation("ReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt      DateTime?
+  reviewNote      String?
+  createdAt       DateTime     @default(now())
+  clientId        String?      @unique // idempotence de la file hors ligne
+
+  alerts Alert[]
+
+  @@index([status, createdAt])
+  @@index([communeId, createdAt])
+  @@index([reporterId, createdAt])
+}
+
+// ─────────────────────────── Marché ───────────────────────────
+
+model Listing {
+  id             String        @id @default(cuid())
+  sellerId       String
+  seller         User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  cropId         String
+  crop           Crop          @relation(fields: [cropId], references: [id], onDelete: Restrict)
+  title          String
+  quantityKg     Int
+  pricePerKgFcfa Int
+  market         Market
+  communeId      String
+  commune        Commune       @relation(fields: [communeId], references: [id], onDelete: Restrict)
+  availableFrom  DateTime
+  qualityNote    String?
+  certification  String?
+  status         ListingStatus @default(OPEN)
+  createdAt      DateTime      @default(now())
+
+  offers Offer[]
+
+  @@index([status, cropId])
+  @@index([status, market, createdAt])
+  @@index([sellerId, createdAt])
+}
+
+model Offer {
+  id             String      @id @default(cuid())
+  listingId      String
+  listing        Listing     @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyerId        String
+  buyer          User        @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  quantityKg     Int
+  pricePerKgFcfa Int
+  message        String?
+  status         OfferStatus @default(PENDING)
+  createdAt      DateTime    @default(now())
+
+  @@index([listingId, status])
+  @@index([buyerId, createdAt])
+}
+
+model ReferencePrice {
+  id             String   @id @default(cuid())
+  cropId         String
+  crop           Crop     @relation(fields: [cropId], references: [id], onDelete: Cascade)
+  communeId      String? // null = prix national
+  commune        Commune? @relation(fields: [communeId], references: [id], onDelete: SetNull)
+  market         Market
+  pricePerKgFcfa Int
+  observedAt     DateTime
+
+  @@index([cropId, market, observedAt])
+}
+
+// ─────────────────────────── Redevances ───────────────────────────
+
+model LevyRate {
+  id       String    @id @default(cuid())
+  code     String    @unique
+  labelFr  String
+  labelFon String?
+  labelYo  String?
+  basis    LevyBasis
+  rate     Int // PER_KG : FCFA/kg ; PERCENT_VALUE : points de base (100 = 1 %) ; FLAT : FCFA
+  active   Boolean   @default(true)
+
+  declarations Declaration[]
+}
+
+model Declaration {
+  id                String            @id @default(cuid())
+  farmerId          String
+  farmer            User              @relation("DeclarationFarmer", fields: [farmerId], references: [id], onDelete: Restrict)
+  levyRateId        String
+  levyRate          LevyRate          @relation(fields: [levyRateId], references: [id], onDelete: Restrict)
+  cropId            String?
+  crop              Crop?             @relation(fields: [cropId], references: [id], onDelete: SetNull)
+  quantityKg        Int?
+  declaredValueFcfa Int?
+  amountDueFcfa     Int // calculé serveur, jamais fourni par le client
+  status            DeclarationStatus @default(SUBMITTED)
+  receiptNumber     String            @unique // AV-2026-000123
+  verificationCode  String            @unique // 12 caractères aléatoires (QR → /verifier/<code>)
+  paidAt            DateTime?
+  validatedById     String?
+  validatedBy       User?             @relation("DeclarationValidator", fields: [validatedById], references: [id], onDelete: SetNull)
+  createdAt         DateTime          @default(now())
+
+  @@index([farmerId, createdAt])
+  @@index([status, createdAt])
+}
+
+// ─────────────────────────── Contenu ───────────────────────────
+
+model Regulation {
+  id         String             @id @default(cuid())
+  slug       String             @unique
+  category   RegulationCategory
+  titleFr    String
+  titleFon   String?
+  titleYo    String?
+  summaryFr  String
+  summaryFon String?
+  summaryYo  String?
+  bodyFr     String // markdown simple
+  bodyFon    String?
+  bodyYo     String?
+  sourceRef  String? // référence légale réelle uniquement ; jamais inventée
+  published  Boolean            @default(true)
+  updatedAt  DateTime           @updatedAt
+
+  @@index([category, published])
+}
+
+// ─────────────────────────── Techniques ───────────────────────────
+
+// Simulateur SMS/USSD (DÉMO) : aucun SMS réel n'est envoyé.
+model SmsOutbox {
+  id        String   @id @default(cuid())
+  toPhone   String
+  body      String
+  lang      String
+  alertId   String?
+  alert     Alert?   @relation(fields: [alertId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([toPhone, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  entityId  String?
+  meta      Json     @default("{}")
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entity, entityId])
+  @@index([actorId, createdAt])
+}
+
+model TranslationCache {
+  id         String   @id @default(cuid())
+  sourceHash String   @unique // sha256(lang + texte)
+  lang       String
+  source     String
+  text       String
+  createdAt  DateTime @default(now())
+}
+
+model AudioCache {
+  id        String   @id @default(cuid())
+  key       String   @unique // sha256(lang + texte)
+  lang      String
+  mime      String
+  data      Bytes
+  createdAt DateTime @default(now())
+}

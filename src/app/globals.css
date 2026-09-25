@@ -1,26 +1,212 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * AgriVeille — design tokens (Tailwind v4).
+ * Source de vérité : docs/DESIGN.md. Aucune valeur arbitraire dans les composants :
+ * on utilise ces tokens (bg-canvas, text-ink, border-line-strong, h-touch, rounded-md…).
+ *
+ * La palette par défaut de Tailwind est retirée volontairement (--color-*: initial) :
+ * `bg-red-500` ou `text-gray-600` ne génèrent RIEN. Utiliser les rôles ci-dessous.
+ * Les couleurs sont lues via var() par les utilitaires : le thème « contraste élevé »
+ * ([data-contrast="high"]) ne fait que redéfinir ces variables.
+ */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@theme {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-white: #ffffff;
+  --color-black: #000000;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* Fonds */
+  --color-canvas: #f7f3ea; /* papier chaud, fond de page */
+  --color-surface: #ffffff; /* cartes, champs */
+  --color-sunken: #efe8da; /* zones en retrait, squelettes, en-têtes de tableau */
+
+  /* Texte */
+  --color-ink: #1f1b16; /* texte principal */
+  --color-ink-muted: #5b5146; /* texte secondaire, aide */
+
+  /* Traits */
+  --color-line: #ddd4c4; /* séparateurs décoratifs (non porteurs d'information) */
+  --color-line-strong: #857865; /* bordures de champs et contrôles (≥ 3:1) */
+
+  /* Marque : végétation */
+  --color-primary: #1e6b3a;
+  --color-primary-hover: #17552e;
+  --color-primary-soft: #e3f0e6;
+  --color-on-primary: #ffffff;
+
+  /* Terre (latérite) : accent secondaire, acheteurs / marché */
+  --color-earth: #8f3f14;
+  --color-earth-soft: #f6e6db;
+
+  /* Soleil : aplats et décor uniquement, jamais du texte sur fond clair */
+  --color-sun: #e0a21a;
+  --color-sun-ink: #8a5a00; /* traits d'icônes soleil / chaleur sur fond clair */
+  --color-sun-soft: #fbefd0;
+
+  /* Sévérités (toujours avec icône + mot) */
+  --color-info: #1d4f80;
+  --color-info-soft: #e4eef7;
+  --color-warning: #7a4e00;
+  --color-warning-soft: #fbefd0;
+  --color-critical: #a1241b;
+  --color-critical-soft: #fbe6e2;
+  --color-on-critical: #ffffff;
+  --color-success: #1e6b3a;
+  --color-success-soft: #e3f0e6;
+
+  /* Focus : anneau encre, décalé de 2 px, visible sur canvas et surface */
+  --color-focus: #1f1b16;
+
+  /* Typographie : pile système (0 octet téléchargé, diacritiques fon/yoruba couverts) */
+  --font-sans:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Ubuntu, Cantarell, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Échelle typographique (racine 16 px ; corps 17 px) */
+  --text-xs: 0.875rem; /* 14 px — métadonnées agent uniquement */
+  --text-xs--line-height: 1.35;
+  --text-sm: 0.9375rem; /* 15 px — tableaux agent */
+  --text-sm--line-height: 1.4;
+  --text-base: 1.0625rem; /* 17 px — corps */
+  --text-base--line-height: 1.5;
+  --text-lg: 1.25rem; /* 20 px — libellés de tuiles, sous-titres */
+  --text-lg--line-height: 1.35;
+  --text-xl: 1.5rem; /* 24 px — titres de page mobile */
+  --text-xl--line-height: 1.25;
+  --text-2xl: 1.875rem; /* 30 px — titres de page desktop, chiffres KPI */
+  --text-2xl--line-height: 1.2;
+  --text-3xl: 2.25rem; /* 36 px — chiffres PIN, accueil */
+  --text-3xl--line-height: 1.1;
+
+  /* Espacement : base 4 px (p-1 = 4, p-2 = 8, p-3 = 12, p-4 = 16, p-6 = 24, p-8 = 32…) */
+  --spacing: 0.25rem;
+  --spacing-touch: 3rem; /* 48 px — cible tactile minimale */
+  --spacing-touch-lg: 4rem; /* 64 px — actions principales fermier */
+
+  /* Rayons */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Ombres sobres (une seule élévation utile) */
+  --shadow-card: 0 1px 0 rgb(31 27 22 / 0.05), 0 1px 3px rgb(31 27 22 / 0.08);
+  --shadow-raised: 0 2px 4px rgb(31 27 22 / 0.08), 0 8px 24px rgb(31 27 22 / 0.1);
+
+  /* Mouvement */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --animate-spin: spin 0.8s linear infinite;
+  --animate-pulse: pulse 1.6s ease-in-out infinite;
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes pulse {
+    50% {
+      opacity: 0.55;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Thème « contraste élevé » : plein soleil, écrans ternes. Fond blanc pur, encre noire,
+   traits noirs, marques plus sombres. Activé par <html data-contrast="high">. */
+[data-contrast="high"] {
+  --color-canvas: #ffffff;
+  --color-surface: #ffffff;
+  --color-sunken: #f0f0f0;
+  --color-ink: #000000;
+  --color-ink-muted: #2b2b2b;
+  --color-line: #000000;
+  --color-line-strong: #000000;
+  --color-primary: #0b4a22;
+  --color-primary-hover: #06331a;
+  --color-primary-soft: #ffffff;
+  --color-earth: #6b2a08;
+  --color-earth-soft: #ffffff;
+  --color-sun-ink: #5c3b00;
+  --color-sun-soft: #ffffff;
+  --color-info: #0a3560;
+  --color-info-soft: #ffffff;
+  --color-warning: #4d3100;
+  --color-warning-soft: #ffffff;
+  --color-critical: #7a120b;
+  --color-critical-soft: #ffffff;
+  --color-success: #0b4a22;
+  --color-success-soft: #ffffff;
+  --color-focus: #000000;
+  --shadow-card: 0 0 0 2px #000000;
+  --shadow-raised: 0 0 0 2px #000000;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    color-scheme: light;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Focus visible partout, identique sur les deux thèmes : anneau 3 px, décalage 2 px. */
+  :focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  /* En contraste élevé, les champs et boutons ont un trait plus épais. */
+  [data-contrast="high"] :where(input, select, textarea, button, a[role="button"], .av-control) {
+    border-width: 2px;
+  }
+
+  a {
+    text-underline-offset: 0.18em;
+  }
+
+  ::selection {
+    background-color: var(--color-sun);
+    color: var(--color-ink);
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+}
+
+/* Mouvement réduit : aucune animation ni transition, y compris spinner et squelette. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
 }
