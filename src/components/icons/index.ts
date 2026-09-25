@@ -39,6 +39,10 @@ import {
   IconVendre,
   IconVent,
   IconChamp,
+  IconDanger,
+  IconStop,
+  IconMenu,
+  IconMarque,
 } from "./pictos";
 
 export * from "./Icon";
@@ -86,6 +90,10 @@ export const icons = {
   deconnexion: IconDeconnexion,
   contraste: IconContraste,
   effacer: IconEffacer,
+  danger: IconDanger,
+  stop: IconStop,
+  menu: IconMenu,
+  marque: IconMarque,
 } satisfies Record<string, IconComponent>;
 
 export type IconName = keyof typeof icons;
@@ -110,4 +118,11 @@ export const alertTypeIcons: Record<
   PEST_OUTBREAK: IconSignaler,
   SOWING_WINDOW: IconSemis,
   HARVEST_WINDOW: IconRecolte,
+};
+
+/** Pictogramme de chaque sévérité : forme différente (cercle, triangle, octogone). */
+export const severityIcons: Record<"INFO" | "WARNING" | "CRITICAL", IconComponent> = {
+  INFO: IconInfo,
+  WARNING: IconAlerte,
+  CRITICAL: IconDanger,
 };

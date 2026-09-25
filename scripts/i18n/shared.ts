@@ -120,3 +120,16 @@ export function summarize(stats: CallStat[]) {
   const max = ok.length ? Math.max(...ok.map((s) => s.ms)) : 0;
   return { calls: stats.length, ok: ok.length, avgMs: avg, maxMs: max };
 }
+
+/**
+ * Ajoute les mesures de cette exécution à .cache/api-stats.json et renvoie le
+ * cumul par catégorie (une relance servie par le cache ne fait aucun appel :
+ * sans cumul, le rapport perdrait la latence réellement mesurée).
+ */
+export function recordStats(kind: "translate" | "tts", stats: CallStat[]) {
+  const file = join(CACHE_DIR, "api-stats.json");
+  const all = readJson<Record<string, CallStat[]>>(file, {});
+  all[kind] = [...(all[kind] ?? []), ...stats];
+  writeJson(file, all);
+  return summarize(all[kind]);
+}

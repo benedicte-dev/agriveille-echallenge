@@ -157,15 +157,21 @@ classDiagram
         +String nameYo [0..1]
         +PestKind kind
         +String symptomsFr
+        +String symptomsFon [0..1]
+        +String symptomsYo [0..1]
         +String preventionFr
+        +String preventionFon [0..1]
+        +String preventionYo [0..1]
         +String treatmentFr
+        +String treatmentFon [0..1]
+        +String treatmentYo [0..1]
         +Float riskTempMin [0..1]
         +Float riskTempMax [0..1]
         +Float riskHumidityMin [0..1]
         +String imageKey [0..1]
         +isRiskDay(day DailyForecast) Boolean
     }
-    note for Pest "symptoms, prevention et treatment existent aussi en Fon et Yo (nullables)"
+    note for Pest "relation n-n implicite avec Crop (table _CropToPest)"
 
     class WeatherSnapshot {
         +String id
@@ -195,8 +201,14 @@ classDiagram
         +AlertSeverity severity
         +AlertSource source
         +String titleFr
+        +String titleFon [0..1]
+        +String titleYo [0..1]
         +String messageFr
+        +String messageFon [0..1]
+        +String messageYo [0..1]
         +String adviceFr [0..1]
+        +String adviceFon [0..1]
+        +String adviceYo [0..1]
         +String parcelId [0..1]
         +String communeId [0..1]
         +Float lat [0..1]
@@ -214,7 +226,7 @@ classDiagram
         +coversPoint(lat Float, lon Float) Boolean
         +localized(locale Locale) String
     }
-    note for Alert "title, message et advice existent aussi en Fon et Yo (nullables, repli fr). dedupKey unique, ex. DROUGHT:parcelId:2026-09-25"
+    note for Alert "Fon et Yo nullables, repli fr à l affichage. dedupKey unique, ex. DROUGHT:parcelId:2026-09-25"
 
     class AlertDelivery {
         +String id
@@ -650,7 +662,7 @@ Relevés lors de l'alignement. Ils sont signalés à l'orchestrateur ; ce diagra
 |---|---|---|---|---|
 | 1 | `RateLimit` | absent | modèle ajouté (`key`, `count`, `windowStart`) | conforme à SPEC §8 « rate-limit en base » ; ajouté en vue 3 |
 | 2 | `PestReport.photo`, `photoMime` | obligatoires | nullables (`Bytes?`, `String?`) | un signalement sans photo (voix seule) devient possible ; l'obligation, si voulue, doit être portée par zod |
-| 3 | Formats de photo | webp / jpeg | commentaire : jpeg / webp / png | à trancher : la séquence 04 suit la SPEC (webp, jpeg) |
+| 3 | Formats de photo | webp / jpeg | commentaire : jpeg / webp / png ; `src/lib/security/image.ts` accepte aussi png | à trancher : la séquence 04 suit la SPEC (webp, jpeg) et mentionne png comme toléré |
 | 4 | `Alert.adviceFr` | non précisé | nullable | conseil facultatif |
 | 5 | `Alert.reportId` | non précisé | non unique (`PestReport.alerts Alert[]`) | multiplicité `0..*` ; l'unicité d'une alerte de foyer par signalement repose sur `dedupKey = PEST_OUTBREAK:<reportId>` |
 | 6 | `AgroZone` | « 8 pôles, ex. PDA1…PDA7 » | 7 valeurs `PDA1` à `PDA7` | la SPEC se contredit ; le schéma retient 7 pôles |

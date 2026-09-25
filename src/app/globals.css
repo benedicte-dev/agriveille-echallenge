@@ -5,13 +5,15 @@
  * Source de vérité : docs/DESIGN.md. Aucune valeur arbitraire dans les composants :
  * on utilise ces tokens (bg-canvas, text-ink, border-line-strong, h-touch, rounded-md…).
  *
+ * `@theme static` : toutes les variables sont émises, même inutilisées, pour que la
+ * variante contraste élevé et les styles inline puissent s'y référer.
  * La palette par défaut de Tailwind est retirée volontairement (--color-*: initial) :
  * `bg-red-500` ou `text-gray-600` ne génèrent RIEN. Utiliser les rôles ci-dessous.
  * Les couleurs sont lues via var() par les utilitaires : le thème « contraste élevé »
  * ([data-contrast="high"]) ne fait que redéfinir ces variables.
  */
 
-@theme {
+@theme static {
   --color-*: initial;
   --color-transparent: transparent;
   --color-current: currentColor;
@@ -40,6 +42,7 @@
   /* Terre (latérite) : accent secondaire, acheteurs / marché */
   --color-earth: #8f3f14;
   --color-earth-soft: #f6e6db;
+  --color-earth-hover: #733210;
 
   /* Soleil : aplats et décor uniquement, jamais du texte sur fond clair */
   --color-sun: #e0a21a;
@@ -53,6 +56,7 @@
   --color-warning-soft: #fbefd0;
   --color-critical: #a1241b;
   --color-critical-soft: #fbe6e2;
+  --color-critical-hover: #821c15;
   --color-on-critical: #ffffff;
   --color-success: #1e6b3a;
   --color-success-soft: #e3f0e6;
@@ -100,6 +104,9 @@
 
   /* Mouvement */
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  /* transition-colors : 120 ms, seul mouvement de l'interface (fond / bordure au survol ou à l'appui) */
+  --default-transition-duration: 120ms;
+  --default-transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
   --animate-spin: spin 0.8s linear infinite;
   --animate-pulse: pulse 1.6s ease-in-out infinite;
   --breakpoint-sm: 40rem;
@@ -134,6 +141,7 @@
   --color-primary-soft: #ffffff;
   --color-earth: #6b2a08;
   --color-earth-soft: #ffffff;
+  --color-earth-hover: #4f1f06;
   --color-sun-ink: #5c3b00;
   --color-sun-soft: #ffffff;
   --color-info: #0a3560;
@@ -142,6 +150,7 @@
   --color-warning-soft: #ffffff;
   --color-critical: #7a120b;
   --color-critical-soft: #ffffff;
+  --color-critical-hover: #5c0d08;
   --color-success: #0b4a22;
   --color-success-soft: #ffffff;
   --color-focus: #000000;
@@ -152,6 +161,7 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
     text-size-adjust: 100%;
     color-scheme: light;
   }
@@ -179,6 +189,34 @@
 
   a {
     text-underline-offset: 0.18em;
+  }
+
+  /* Pas de délai de double-tap, curseur main sur tout ce qui s'active. */
+  button,
+  a,
+  [role="button"],
+  summary,
+  label[for] {
+    touch-action: manipulation;
+  }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary {
+    cursor: pointer;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+    font-weight: 700;
+    letter-spacing: -0.005em;
+  }
+
+  /* Chiffres alignés dans les tableaux et montants. */
+  table,
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 
   ::selection {

@@ -11,8 +11,8 @@
  * - Débit : un appel toutes les 12,5 s (limite de l'API : 5 req/min).
  */
 import { join } from "node:path";
-import { writeFileSync } from "node:fs";
-import { protectVars, restoreVars } from "../../src/lib/i18n/format";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { cleanTranslation, protectVars, restoreVars } from "../../src/lib/i18n/format";
 import type { TargetLang } from "../../src/lib/langues/core";
 import {
   CACHE_DIR,
@@ -21,6 +21,7 @@ import {
   diskTranslationCache,
   loadEnv,
   readJson,
+  recordStats,
   scriptClient,
   summarize,
   writeJson,
@@ -113,7 +114,7 @@ async function main() {
         outcomes[lang][key] = { text: fr[key], status: "fallback", reason: "API en échec" };
         continue;
       }
-      const restored = restoreVars(out, p.tokens);
+      const restored = restoreVars(cleanTranslation(out), p.tokens);
       if (!restored.ok) {
         dict[key] = fr[key];
         outcomes[lang][key] = { text: fr[key], status: "fallback", reason: restored.reason };
@@ -142,6 +143,7 @@ function writeReport(
   const same = (lang: TargetLang) =>
     keys.filter((k) => outcomes[lang][k].status === "translated" && outcomes[lang][k].text === fr[k]);
   const s = summarize(stats);
+  const all = recordStats("translate", stats);
   const esc = (x: string) => x.replace(/\|/g, "\\|");
 
   const lines: string[] = [
@@ -168,7 +170,9 @@ function writeReport(
     "",
     `Appels API (cette exécution) : ${s.calls} (dont ${s.ok} réussis), durée moyenne ${s.avgMs} ms, max ${s.maxMs} ms.`,
     `Durée totale : ${Math.round(elapsedMs / 1000)} s (débit volontairement limité à ~5 appels/min).`,
+    `Cumul de toutes les exécutions (translate + batch) : ${all.ok} appels réussis, durée moyenne ${all.avgMs} ms, max ${all.maxMs} ms.`,
     "Les textes déjà en cache disque ne repartent pas vers l'API : une relance peut faire 0 appel.",
+    "Un lot de 50 textes est un seul appel : la durée moyenne par appel inclut donc 50 traductions.",
     "",
     "## Clés en repli français",
     "",
@@ -199,7 +203,12 @@ function writeReport(
     "   variables sont identiques entre les trois langues.",
     "",
   );
-  writeFileSync(join(ROOT, "scripts/i18n/REPORT.md"), lines.join("\n"), "utf8");
+  // Conserve la section audio écrite par generate-audio.ts.
+  const reportPath = join(ROOT, "scripts/i18n/REPORT.md");
+  const prev = existsSync(reportPath) ? readFileSync(reportPath, "utf8") : "";
+  const audio = prev.match(/<!-- audio:begin -->[\s\S]*<!-- audio:end -->/)?.[0];
+  if (audio) lines.push(audio, "");
+  writeFileSync(reportPath, lines.join("\n"), "utf8");
   console.log("  écrit scripts/i18n/REPORT.md");
 }
 

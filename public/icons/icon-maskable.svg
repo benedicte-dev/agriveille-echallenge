@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><title>AgriVeille</title>
+  <rect width="512" height="512" fill="#1e6b3a"/>
+  <g transform="translate(128 124) scale(10.667)" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <circle cx="6.5" cy="6.5" r="2.5" fill="#e0a21a" stroke="#e0a21a"/>
+    <g stroke="#ffffff">
+      <path d="M3 20.5h18"/>
+      <path d="M13.5 20.5V11"/>
+      <path d="M13.5 13c0-3.3 2.2-5.5 5.5-5.5 0 3.3-2.2 5.5-5.5 5.5z" fill="#ffffff"/>
+      <path d="M13.5 16c0-2.6-1.8-4.3-4.3-4.3 0 2.5 1.7 4.3 4.3 4.3z" fill="#ffffff"/>
+    </g>
+  </g>
+</svg>

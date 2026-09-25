@@ -98,3 +98,17 @@ export function sameVars(source: string, translated: string): boolean {
   const b = extractVars(translated);
   return a.length === b.length && a.every((v, i) => v === b[i]);
 }
+
+/**
+ * Nettoie une sortie de traduction automatique : caractères invisibles
+ * (U+200B…U+200D, U+FEFF), espaces multiples, espace avant « . , ! ? : ; »
+ * et point final isolé (« lɛ . » → « lɛ. »). Ne touche pas aux lettres.
+ */
+export function cleanTranslation(text: string): string {
+  return text
+    .normalize("NFC")
+    .replace(/[​-‍﻿]/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/\s+([.,!?;:…])/g, "$1")
+    .trim();
+}

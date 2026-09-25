@@ -11,7 +11,7 @@
  * Un WAV > 150 Ko est converti en MP3 mono 32 kb/s si ffmpeg est présent.
  */
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { extractVars } from "../../src/lib/i18n/format";
 import { sniffAudio, type VoiceLang } from "../../src/lib/langues/core";
@@ -22,6 +22,7 @@ import {
   diskAudioCache,
   loadEnv,
   readJson,
+  recordStats,
   scriptClient,
   summarize,
   writeJson,
@@ -158,10 +159,15 @@ async function main() {
   writeJson(join(PUBLIC_AUDIO, "manifest.json"), manifest);
   const s = summarize(stats);
   console.log("Appels API :", s);
-  updateReport(rows, s, ffmpeg);
+  updateReport(rows, s, recordStats("tts", stats), ffmpeg);
 }
 
-function updateReport(rows: Row[], s: ReturnType<typeof summarize>, ffmpeg: boolean) {
+function updateReport(
+  rows: Row[],
+  s: ReturnType<typeof summarize>,
+  all: ReturnType<typeof summarize>,
+  ffmpeg: boolean,
+) {
   const reportPath = join(ROOT, "scripts/i18n/REPORT.md");
   const begin = "<!-- audio:begin -->";
   const end = "<!-- audio:end -->";
@@ -174,6 +180,7 @@ function updateReport(rows: Row[], s: ReturnType<typeof summarize>, ffmpeg: bool
     `Clés visées : ${AUDIO_KEYS.length} par langue. Fichiers produits : fon ${done.filter((r) => r.lang === "fon").length}, yo ${done.filter((r) => r.lang === "yo").length}.`,
     `Taille totale : ${Math.round(total / 1024)} Ko. ffmpeg : ${ffmpeg ? "présent (WAV > 150 Ko convertis en MP3 mono 32 kb/s)" : "absent (WAV conservés)"}.`,
     `Appels TTS (cette exécution) : ${s.calls}, durée moyenne ${s.avgMs} ms, max ${s.maxMs} ms (0 si tout venait du cache).`,
+    `Cumul TTS de toutes les exécutions : ${all.ok} appels réussis, durée moyenne ${all.avgMs} ms, max ${all.maxMs} ms.`,
     "",
     "La voix est synthétique et lit la traduction automatique : même réserve de relecture que le texte.",
     "",
@@ -185,7 +192,6 @@ function updateReport(rows: Row[], s: ReturnType<typeof summarize>, ffmpeg: bool
     ? current.replace(new RegExp(`${begin}[\\s\\S]*${end}`), section)
     : `${current.trimEnd()}\n\n${section}\n`;
   writeFileSync(reportPath, next, "utf8");
-  void statSync;
 }
 
 main().catch((err) => {

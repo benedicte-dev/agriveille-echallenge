@@ -5,12 +5,11 @@ import { createIcon, Dot } from "./Icon";
 export const IconChamp = createIcon(
   "IconChamp",
   <>
-    <path d="M3 20h18" />
-    <path d="M4 13h16" />
-    <path d="M5 20l3-7M12 20v-7M19 20l-3-7" />
-    <path d="M12 13V9" />
-    <path d="M12 9c0-2.2 1.6-4 4-4 0 2.2-1.8 4-4 4z" />
-    <path d="M12 9.5c0-1.9-1.4-3.3-3.3-3.3 0 1.9 1.4 3.3 3.3 3.3z" />
+    <path d="M5.5 12.5h13l3 8h-19z" />
+    <path d="M9.5 12.5 8 20.5M12 12.5v8M14.5 12.5l1.5 8" />
+    <path d="M12 12.5V8" />
+    <path d="M12 9.5c0-2.8 1.8-4.5 4.5-4.5 0 2.7-1.8 4.5-4.5 4.5z" />
+    <path d="M12 10c0-2.2-1.4-3.6-3.6-3.6 0 2.1 1.4 3.6 3.6 3.6z" />
   </>,
 );
 
@@ -333,5 +332,37 @@ export const IconEffacer = createIcon(
   <>
     <path d="M8.5 5H21v14H8.5L2.5 12z" />
     <path d="M11.5 9l6 6M17.5 9l-6 6" />
+  </>,
+);
+
+/** Sévérité CRITICAL : octogone (forme distincte du triangle WARNING et du cercle INFO). */
+export const IconDanger = createIcon(
+  "IconDanger",
+  <>
+    <path d="M8.3 2.5h7.4l5.8 5.8v7.4l-5.8 5.8H8.3l-5.8-5.8V8.3z" />
+    <path d="M12 7.5v5.5" />
+    <Dot cx={12} cy={16.3} r={1.1} />
+  </>,
+);
+
+export const IconStop = createIcon(
+  "IconStop",
+  <rect x={6} y={6} width={12} height={12} rx={1.5} fill="currentColor" />,
+);
+
+export const IconMenu = createIcon("IconMenu", <path d="M4 6.5h16M4 12h16M4 17.5h16" />);
+
+/**
+ * Marque AgriVeille : soleil, pousse, sol. Monochrome (currentColor) ; la version
+ * en couleurs est public/icons/icon.svg.
+ */
+export const IconMarque = createIcon(
+  "IconMarque",
+  <>
+    <circle cx={6.5} cy={6.5} r={2.5} />
+    <path d="M3 20.5h18" />
+    <path d="M13.5 20.5V11" />
+    <path d="M13.5 13c0-3.3 2.2-5.5 5.5-5.5 0 3.3-2.2 5.5-5.5 5.5z" />
+    <path d="M13.5 16c0-2.6-1.8-4.3-4.3-4.3 0 2.5 1.7 4.3 4.3 4.3z" />
   </>,
 );

@@ -7,9 +7,9 @@ import type { CandidateAlert, DailyForecast, Forecast, PestInput, PlantingInput 
 const TODAY = '2026-09-25';
 const DATES = ['2026-09-25', '2026-09-26', '2026-09-27', '2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01'];
 
-/** Journée « neutre » : ne déclenche aucune règle météo. */
+/** Journée « neutre » : ne déclenche aucune règle (humidité 60 % < seuil ravageur 70 %). */
 function day(i: number, over: Partial<DailyForecast> = {}): DailyForecast {
-  return { date: DATES[i], tmax: 31, tmin: 23, precipMm: 3, humidityMean: 70, windMaxKmh: 15, et0Mm: 3, ...over };
+  return { date: DATES[i], tmax: 31, tmin: 23, precipMm: 3, humidityMean: 60, windMaxKmh: 15, et0Mm: 3, ...over };
 }
 function forecast(overs: Array<Partial<DailyForecast>> = []): Forecast {
   return {

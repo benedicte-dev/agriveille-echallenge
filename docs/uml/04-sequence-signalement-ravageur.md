@@ -7,7 +7,7 @@
 
 ## Description du scénario
 
-Dans son champ, l'exploitante ouvre `/app/signaler`. Elle photographie la plante atteinte : le navigateur redimensionne
+Dans son champ, l'exploitante ouvre `/app/signaler`. Elle photographie la plante atteinte (facultatif si elle dicte) : le navigateur redimensionne
 l'image (1280 px au plus) et la réencode en webp qualité 0,7 avant tout envoi. Elle peut aussi décrire le problème à voix
 haute en fon : l'audio part vers le proxy serveur `/api/voice/stt`, qui appelle l'API 229langues sans jamais exposer de
 secret au navigateur, et la transcription est affichée. La position est prise par la géolocalisation du navigateur, ou à
@@ -38,8 +38,11 @@ sequenceDiagram
     actor VOI as Exploitant·es<br/>voisin·es
 
     EXP->>EXP: ouvrir /app/signaler, choisir la culture (pictogramme)
-    EXP->>EXP: prendre une photo
-    Note over EXP: compression côté client (canvas)<br/>1280 px au plus, webp qualité 0,7<br/>environ 100 à 300 Ko
+    Note over EXP: au moins une preuve : photo, dictée, ou les deux<br/>(photo nullable dans le schéma, obligation portée par zod)
+    opt photo
+        EXP->>EXP: prendre une photo
+        Note over EXP: compression côté client (canvas)<br/>1280 px au plus, webp qualité 0,7<br/>environ 100 à 300 Ko
+    end
 
     opt dictée en fon ou en yoruba
         EXP->>APP: POST /api/voice/stt (multipart audio, langue fon)
@@ -77,11 +80,11 @@ sequenceDiagram
     SEC->>SEC: 2. session valide (cookie av_session) et rôle FARMER
     SEC->>DB: 3. rate-limit signalement (compteur en base)
     DB-->>SEC: quota restant
-    SEC->>SEC: 4. signature magique : RIFF....WEBP ou FF D8 FF,<br/>photo au plus 300 Ko
+    SEC->>SEC: 4. signature magique : RIFF....WEBP ou FF D8 FF<br/>(png toléré par l'implémentation), photo au plus 300 Ko
     SEC->>SEC: 5. zod : lat / lon au Bénin, textes bornés,<br/>parcelId appartenant à l'utilisatrice
     alt un contrôle échoue
         SEC-->>APP: refus
-        APP-->>EXP: erreur générique (détail en log serveur)
+        APP-->>EXP: erreur générique (détail en log serveur)<br/>depuis la file : élément conservé si 401 ou 429
     else tous les contrôles passent
         APP->>REP: createReport(input validé, reporterId)
         REP->>DB: PestReport existe pour ce clientId ?
@@ -94,9 +97,12 @@ sequenceDiagram
             REP->>DB: INSERT AuditLog (REPORT_CREATE)
             REP-->>APP: reportId
         end
-        APP-->>EXP: « signalement reçu, un agent va l'examiner »
-        opt envoi depuis la file
+        alt envoi direct
+            APP-->>EXP: « signalement reçu, un agent va l'examiner »
+        else envoi depuis la file
+            APP-->>SW: 200 {clientId: ok, reportId}
             SW->>SW: retirer l'élément de la file
+            SW-->>EXP: notification « signalement envoyé »
         end
     end
 
@@ -166,7 +172,7 @@ sequenceDiagram
 | N° | Situation | Comportement attendu |
 |---|---|---|
 | E1 | Corps de requête supérieur à 2 Mo | Rejet avant parsing, erreur générique. |
-| E2 | Fichier dont la signature n'est ni webp ni jpeg (ex. SVG, exécutable renommé) | Rejet, quelle que soit l'extension ou le `Content-Type` annoncé. Tentative journalisée. |
+| E2 | Fichier dont la signature n'est ni webp ni jpeg (png toléré par `src/lib/security/image.ts`), ex. SVG ou exécutable renommé | Rejet, quelle que soit l'extension ou le `Content-Type` annoncé. Tentative journalisée. |
 | E3 | Photo valide mais supérieure à 300 Ko après compression | Rejet avec un message invitant à reprendre la photo. Le client compresse à nouveau à qualité inférieure. |
 | E4 | Quota de signalements ou de STT dépassé | 429 générique. Le signalement reste dans la file hors ligne s'il en venait. |
 | E5 | Session expirée pendant la synchronisation | 401. La file est conservée et rejouée après reconnexion. |
@@ -176,3 +182,4 @@ sequenceDiagram
 | E9 | Deux agents valident le même signalement en même temps | La mise à jour est conditionnelle (`status = PENDING`). Le second reçoit « déjà traité ». Une seule alerte (dedupKey `PEST_OUTBREAK:<reportId>`). |
 | E10 | Aucune parcelle dans le rayon | L'alerte est créée (visible sur la carte AGENT), zéro livraison. L'agent peut élargir le rayon en émettant une alerte de zone manuelle. |
 | E11 | Rôle `FARMER` ou `BUYER` qui appelle `reviewReport` ou la route photo | Refus côté serveur (`requireRole`), même si l'interface n'affiche pas le bouton. |
+| E12 | Ni photo ni description ni transcription | Rejet zod : un signalement doit porter au moins une preuve. |

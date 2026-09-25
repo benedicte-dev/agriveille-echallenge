@@ -51,7 +51,7 @@ sequenceDiagram
                 Note over MON: réutilise snapshot.payload<br/>aucun appel réseau
             else snapshot expiré ou absent
                 MON->>OM: GET /v1/forecast?latitude, longitude<br/>daily = tmax, tmin, pluie, humidité, vent, ET0<br/>timezone = Africa/Porto-Novo, 7 jours
-                alt Open-Meteo répond (délai max 10 s)
+                alt Open-Meteo répond (délai max 8 s)
                     OM-->>MON: 200 daily[7]
                     MON->>MON: valider la réponse (zod)
                     MON->>DB: INSERT WeatherSnapshot<br/>(fetchedAt = now, expiresAt = now + 3 h)
@@ -110,18 +110,19 @@ sequenceDiagram
     RT->>DB: AudioCache(sha256(fon + texte))
     alt audio en cache
         DB-->>RT: audio wav
+        RT-->>EXP: audio/wav (lecture dans le navigateur)
     else absent
         RT->>LG: POST /api/v1/tts {text, language: fon}
-        alt l'API répond (délai max 60 s)
+        alt l'API répond (délai borné)
             LG-->>RT: audio wav
             RT->>DB: INSERT AudioCache
+            RT-->>EXP: audio/wav (lecture dans le navigateur)
         else erreur ou délai dépassé
             LG-->>RT: erreur
             RT-->>EXP: 503 générique
             Note over EXP: message « audio indisponible »<br/>lecture du texte, synthèse fr du navigateur proposée
         end
     end
-    RT-->>EXP: audio/wav (lecture dans le navigateur)
 
     EXP->>EXP: toucher « J'ai compris »
     alt en ligne
@@ -164,7 +165,7 @@ Dans ce diagramme, le participant « Route » représente la couche Next.js expo
 | N° | Situation | Comportement attendu |
 |---|---|---|
 | E1 | Secret du cron absent ou faux | 401 avec un corps générique. Aucun traitement. Pas de détail sur la raison. |
-| E2 | Open-Meteo indisponible ou lent (délai de 10 s dépassé) | Réutilisation du snapshot expiré s'il existe (les alertes restent pertinentes à quelques heures près). Sinon, parcelle ignorée, compteur `erreurs` incrémenté, le lot continue. |
+| E2 | Open-Meteo indisponible ou lent (délai de 8 s dépassé, `OPEN_METEO_TIMEOUT_MS`) | Réutilisation du snapshot expiré s'il existe (les alertes restent pertinentes à quelques heures près). Sinon, parcelle ignorée, compteur `erreurs` incrémenté, le lot continue. |
 | E3 | Réponse Open-Meteo malformée | Rejet par zod, traité comme E2. Aucune donnée non validée n'entre en base. |
 | E4 | API 229langues en erreur ou en démarrage lent (jusqu'à 60 s) | Délai court dans le cron. Champs fon / yo à `null`, affichage en français. L'alerte n'est **jamais** bloquée par la traduction. |
 | E5 | Deux exécutions concurrentes (cron et bouton AGENT « Lancer l'analyse ») | La contrainte unique sur `dedupKey` et `unique(alertId, userId, channel)` absorbe la course : le conflit est traité comme un doublon. |
