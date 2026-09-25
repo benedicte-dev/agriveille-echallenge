@@ -1,69 +1,124 @@
-import Image from "next/image";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Button, LanguageSwitcher, ListenButton } from "@/components/ui";
+import { IconAlerte, IconChevron, IconPayer, IconRegle, IconVendre, type IconComponent } from "@/components/icons";
+import { setLocaleAction } from "@/lib/i18n/actions";
+import { getCurrentUser, homePathForRole } from "@/lib/auth";
+import { PublicFrame } from "@/server/content/ui/PublicFrame";
+import { VerifyForm } from "@/server/content/ui/VerifyForm";
+import { getTranslator, listenLabels } from "@/server/content/ui/i18n";
 
-export default function Home() {
+export const metadata: Metadata = {
+  title: { absolute: "AgriVeille · veille agricole du Bénin" },
+};
+
+const BENEFITS: { key: string; icon: IconComponent; chip: string }[] = [
+  { key: "alerts", icon: IconAlerte, chip: "bg-sun-soft text-sun-ink" },
+  { key: "sell", icon: IconVendre, chip: "bg-earth-soft text-earth" },
+  { key: "pay", icon: IconPayer, chip: "bg-info-soft text-info" },
+];
+
+export default async function HomePage() {
+  const { locale, tr } = await getTranslator();
+  const user = await getCurrentUser();
+  const labels = listenLabels(tr);
+  const promise = `${tr("app.tagline")}. ${tr("home.intro")}`;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <PublicFrame showLanguage={false}>
+      <div className="flex flex-col gap-8">
+        <section aria-labelledby="choix-langue" className="flex flex-col gap-3">
+          <p id="choix-langue" className="text-lg font-bold">
+            {tr("lang.choose")}
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+          <LanguageSwitcher current={locale} action={setLocaleAction} variant="cards" label={tr("lang.choose")} />
+          {locale !== "fr" ? <p className="text-sm text-ink-muted">{tr("lang.machine_notice")}</p> : null}
+        </section>
+
+        <section className="flex flex-col gap-3">
+          <h1 className="text-xl sm:text-2xl">{tr("app.tagline")}</h1>
+          <p className="text-lg text-ink">{tr("home.intro")}</p>
+          <ListenButton text={promise} lang={locale} labels={labels} className="w-fit" />
+        </section>
+
+        <section aria-labelledby="benefices">
+          <h2 id="benefices" className="sr-only">
+            {tr("pub.benefits")}
+          </h2>
+          <ul className="flex flex-col gap-3">
+            {BENEFITS.map(({ key, icon: Icon, chip }) => {
+              const title = tr(`pub.benefit.${key}.title`);
+              const text = tr(`pub.benefit.${key}.text`);
+              return (
+                <li key={key} className="flex items-center gap-4 rounded-xl border border-line bg-surface p-4 shadow-card">
+                  <span className={`flex size-16 shrink-0 items-center justify-center rounded-full ${chip}`}>
+                    <Icon size={40} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg">{title}</h3>
+                    <p className="text-base text-ink-muted">{text}</p>
+                  </div>
+                  <ListenButton text={`${title}. ${text}`} lang={locale} labels={labels} variant="icon" />
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
+        <section aria-label={tr("nav.login")} className="flex flex-col gap-3">
+          {user ? (
+            <Button href={homePathForRole(user.role)} size="lg" block>
+              {tr("pub.go_space")}
+            </Button>
+          ) : (
+            <>
+              <Button href="/connexion" size="lg" block>
+                {tr("nav.login")}
+              </Button>
+              <Button href="/inscription" variant="secondary" size="lg" block>
+                {tr("nav.register")}
+              </Button>
+            </>
+          )}
+        </section>
+
+        <section aria-labelledby="acces-public" className="flex flex-col gap-3">
+          <h2 id="acces-public" className="text-lg">
+            {tr("pub.public_access")}
+          </h2>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {[
+              { href: "/reglementation", icon: IconRegle, label: tr("nav.regulation"), hint: tr("pub.reg_hint") },
+              { href: "/marche", icon: IconVendre, label: tr("home.market_prices"), hint: tr("pub.market_hint") },
+            ].map(({ href, icon: Icon, label, hint }) => (
+              <li key={href}>
+                <Link
+                  href={href}
+                  className="flex min-h-touch-lg items-center gap-3 rounded-xl border-2 border-line bg-surface p-4 text-ink no-underline transition-colors hover:border-primary"
+                >
+                  <Icon size={32} className="shrink-0 text-primary" />
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="text-lg font-bold">{label}</span>
+                    <span className="text-sm text-ink-muted">{hint}</span>
+                  </span>
+                  <IconChevron size={24} className="shrink-0 text-ink-muted" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div id="verifier" className="scroll-mt-4 rounded-xl border border-line bg-surface p-4 shadow-card">
+            <VerifyForm
+              labels={{
+                title: tr("nav.verify"),
+                label: tr("pub.verify.label"),
+                hint: tr("pub.verify.hint"),
+                submit: tr("pub.verify.submit"),
+                invalid: tr("pub.verify.invalid"),
+              }}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+          </div>
+        </section>
+      </div>
+    </PublicFrame>
   );
 }
