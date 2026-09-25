@@ -367,3 +367,97 @@ export async function deleteReferencePrice(id: string) {
   await prisma.referencePrice.delete({ where: { id } });
   return row;
 }
+
+// ── Lectures pour les écrans du CMS ───────────────────────────────────────
+
+export function listRegulationsAdmin() {
+  return prisma.regulation.findMany({
+    orderBy: [{ published: "desc" }, { updatedAt: "desc" }],
+    select: { id: true, slug: true, category: true, titleFr: true, titleFon: true, titleYo: true, published: true, updatedAt: true },
+  });
+}
+
+export function getRegulationAdmin(id: string) {
+  return prisma.regulation.findUnique({ where: { id } });
+}
+
+export function listPestsAdmin() {
+  return prisma.pest.findMany({
+    orderBy: { nameFr: "asc" },
+    select: {
+      id: true,
+      slug: true,
+      kind: true,
+      nameFr: true,
+      riskTempMin: true,
+      riskTempMax: true,
+      riskHumidityMin: true,
+      crops: { select: { nameFr: true }, orderBy: { nameFr: "asc" } },
+    },
+  });
+}
+
+export function getPestAdmin(id: string) {
+  return prisma.pest.findUnique({ where: { id }, include: { crops: { select: { id: true } } } });
+}
+
+export function listCropsAdmin() {
+  return prisma.crop.findMany({
+    orderBy: { nameFr: "asc" },
+    select: {
+      id: true,
+      slug: true,
+      nameFr: true,
+      cycleDays: true,
+      sowingMonths: true,
+      harvestMonths: true,
+      minRainMm: true,
+      optimalTempMin: true,
+      optimalTempMax: true,
+    },
+  });
+}
+
+export function getCropAdmin(id: string) {
+  return prisma.crop.findUnique({ where: { id } });
+}
+
+export function cropOptions() {
+  return prisma.crop.findMany({ orderBy: { nameFr: "asc" }, select: { id: true, nameFr: true } });
+}
+
+export function communeOptions() {
+  return prisma.commune.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, department: true } });
+}
+
+export function listRecentPrices(take = 50) {
+  return prisma.referencePrice.findMany({
+    orderBy: [{ observedAt: "desc" }, { id: "desc" }],
+    take,
+    select: {
+      id: true,
+      market: true,
+      pricePerKgFcfa: true,
+      observedAt: true,
+      crop: { select: { nameFr: true } },
+      commune: { select: { name: true } },
+    },
+  });
+}
+
+export function listLevyRatesAdmin() {
+  return prisma.levyRate.findMany({
+    orderBy: [{ active: "desc" }, { code: "asc" }],
+    select: {
+      id: true,
+      code: true,
+      labelFr: true,
+      labelFon: true,
+      labelYo: true,
+      basis: true,
+      rate: true,
+      active: true,
+      _count: { select: { declarations: true } },
+    },
+  });
+}
