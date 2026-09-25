@@ -62,7 +62,7 @@ export async function makeOfferAction(_prev: ActionState, formData: FormData): P
   const res = await makeOffer(ctx, pickFields(formData, ["listingId", "quantityKg", "pricePerKgFcfa", "message"]));
   if (!res.ok) return errorState(m, res);
   revalidateMarket();
-  redirect("/acheteur/offres?envoyee=1");
+  redirect("/acheteur?envoyee=1");
 }
 
 export async function respondOfferAction(_prev: ActionState, formData: FormData): Promise<ActionState> {

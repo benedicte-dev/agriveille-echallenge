@@ -205,11 +205,11 @@ export function ReportWizard({
   const needsCommune = !selectedParcel && gps.status !== "ok";
 
   // ── Ravageurs : ceux des cultures du champ choisi d'abord ──
-  const [likelyPests, otherPests] = useMemo(() => {
+  const [likelyPests, otherPests] = useMemo<[WizardPest[], WizardPest[]]>(() => {
     const crops = new Set(selectedParcel?.cropSlugs ?? []);
-    if (crops.size === 0) return [[], pests] as const;
+    if (crops.size === 0) return [[], pests];
     const likely = pests.filter((p) => p.cropSlugs.some((c) => crops.has(c)));
-    return [likely, pests.filter((p) => !likely.includes(p))] as const;
+    return [likely, pests.filter((p) => !likely.includes(p))];
   }, [pests, selectedParcel]);
 
   // ── Envoi ──

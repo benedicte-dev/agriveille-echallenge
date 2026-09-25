@@ -25,9 +25,13 @@ export async function reviewReportAction(_prev: ReviewActionState, formData: For
   const agent = await requireRole("AGENT");
   const raw = formDataToObject(formData);
   const id = raw.reportId ?? "";
+  const decision = raw.decision;
+  if (decision !== "CONFIRMED" && decision !== "REJECTED") {
+    return { status: "error", code: "INVALID", message: "Décision invalide." };
+  }
   try {
     const result = await reviewReport(agent, id, {
-      decision: raw.decision,
+      decision,
       pestId: raw.pestId,
       note: raw.note,
       radiusKm: raw.radiusKm,
