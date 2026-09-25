@@ -193,3 +193,26 @@ automatique », séquence « signalement ravageur → validation → alerte de z
 
 Toute écriture hors de sa zone est interdite ; un besoin chez un autre → noter dans son rapport final.
 Pas de commit git : l'orchestrateur commit.
+
+## 12. Vague 2 — modules (propriété des fichiers)
+
+Modules partagés déjà écrits (à utiliser, ne pas réécrire) : `src/server/langues.ts` (client 229langues avec cache Prisma,
+`toTrilingual`, `tts`, `stt`) et `src/server/alerts/deliver.ts` (`publishAlert`, `localizedAlert`, `smsBody`, `markDelivery`).
+Bibliothèques : `@/lib/auth`, `@/lib/auth/actions`, `@/lib/security`, `@/lib/validation`, `@/lib/monitoring`, `@/lib/i18n`
+(+ `provider`, `server`, `actions`, `audio`), `@/components/ui`, `@/components/icons`. Lire `docs/DESIGN.md` avant toute UI.
+
+Libellés : réutiliser les clés existantes de `src/lib/i18n/messages/fr.json`. Nouvelle clé → l'ajouter **uniquement** dans
+`fr.json` (Edit ciblé, préfixe du module, jamais de réécriture complète du fichier) ; ne jamais toucher `fon.json`/`yo.json`
+(régénérés par l'orchestrateur). Les pages lisent la locale avec `getLocale()` et affichent les champs `xxxFon`/`xxxYo`
+avec repli `xxxFr`.
+
+| Agent | Écrit uniquement dans |
+|---|---|
+| M1 monitoring | `src/server/monitoring/`, `src/app/api/cron/`, `src/app/api/voice/`, `src/app/api/health/`, `src/app/app/layout.tsx`, `src/app/app/page.tsx`, `src/app/app/parcelles/`, `src/app/app/alertes/`, `src/app/app/profil/`, `src/app/agent/alertes/`, `vercel.json` |
+| M2 phyto + hors ligne | `src/server/reports/`, `src/lib/offline/`, `public/sw.js`, `src/app/app/signaler/`, `src/app/api/offline/`, `src/app/api/reports/`, `src/app/agent/signalements/`, `src/app/hors-ligne/` |
+| M3 marché + recettes | `src/server/market/`, `src/server/levies/`, `src/app/marche/`, `src/app/app/marche/`, `src/app/acheteur/`, `src/app/app/redevances/`, `src/app/app/quittance/`, `src/app/verifier/`, `src/app/agent/recettes/` |
+| M4 public + CMS + agent | `src/server/content/`, `src/app/page.tsx`, `src/app/connexion/`, `src/app/inscription/`, `src/app/reglementation/`, `src/app/modelisation/`, `src/app/catalogue/`, `src/app/agent/layout.tsx`, `src/app/agent/page.tsx`, `src/app/agent/sms/`, `src/app/admin/`, `src/app/not-found.tsx`, `src/app/error.tsx`, `public/*.svg` par défaut, `src/app/favicon.ico`, `scripts/content/` |
+
+Commun à tous : `pnpm exec tsc --noEmit` et `pnpm exec eslint <tes fichiers>` propres ; tests vitest de la logique serveur ;
+pas de `next build`/`next dev` (l'orchestrateur intègre et lance le build) ; pas de commit ; contrôle rôle + propriété
+dans chaque Server Action et route ; zod partout ; aucune fonctionnalité factice (bouton mort, succès simulé non étiqueté).
