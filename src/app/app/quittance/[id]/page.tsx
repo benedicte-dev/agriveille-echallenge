@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { IconPayer, IconQr } from "@/components/icons";
+import { OfficialHeader } from "@/components/brand/OfficialHeader";
 import { Badge, Callout, PageHeader } from "@/components/ui";
 import { requireRole } from "@/lib/auth";
 import { getDeclarationForOwner } from "@/server/levies/queries";
@@ -45,7 +46,8 @@ export default async function QuittancePage({
         @media print {
           header, nav, .no-print { display: none !important; }
           main { padding: 0 !important; }
-          #quittance-print { border: none !important; box-shadow: none !important; }
+          #quittance-print { border: none !important; box-shadow: none !important; background: #fff !important; }
+          body { background: #fff !important; }
         }
       `}</style>
 
@@ -68,6 +70,12 @@ export default async function QuittancePage({
       ) : null}
 
       <div id="quittance-print" className="flex flex-col gap-6 rounded-2xl border-2 border-line bg-surface p-6 shadow-card">
+        <OfficialHeader
+          armsAlt={tr("brand.arms_alt")}
+          republic={tr("brand.republic")}
+          motto={tr("brand.motto")}
+          ministry={tr("brand.ministry")}
+        />
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm text-ink-muted">{tr("levy.title")}</p>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { IconAlerte, IconCheck, IconDanger, IconQr } from "@/components/icons";
 import { Button, Callout, PageHeader, PublicShell, cx } from "@/components/ui";
+import { OfficialHeader } from "@/components/brand/OfficialHeader";
 import { getRequestIp } from "@/lib/security/ip";
 import { verifyReceipt, isReceiptValid } from "@/server/levies/service";
 import { formatDate, formatFcfa } from "@/server/market/format";
@@ -102,6 +103,14 @@ export default async function VerifierCodePage({ params }: { params: Promise<{ c
 
   return (
     <PublicShell footer={<p>{tr("lev.demo_document")}</p>}>
+      <div className="mb-6">
+        <OfficialHeader
+          armsAlt={tr("brand.arms_alt")}
+          republic={tr("brand.republic")}
+          motto={tr("brand.motto")}
+          ministry={tr("brand.ministry")}
+        />
+      </div>
       <PageHeader title={tr("levy.verify_title")} icon={<IconQr size={36} />} />
       {body}
       <div className="mt-6">
