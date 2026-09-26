@@ -50,7 +50,7 @@ Ils s'appliquent à toutes les routes :
 ## Gestion des secrets
 
 - Les secrets sont lus depuis les variables d'environnement : `DATABASE_URL`, `CRON_SECRET`, `LANGUES_API_BASE`, `LANGUES_API_KEY`, `LANGUES_HF_TOKEN`. En production, ils sont définis dans Vercel. En local, ils vont dans `.env`, qui ne doit jamais être commité ; `.env.example` ne contient que des noms vides.
-- Les clés 229langues ne sont utilisées que côté serveur (`src/lib/langues/client.ts`) et ne sont jamais exposées au navigateur. Les seules variables `NEXT_PUBLIC_*` sont `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_DEMO_MODE` et `NEXT_PUBLIC_REPO_URL`, qui ne sont pas secrètes.
+- Les clés 229langues ne sont utilisées que côté serveur (`src/lib/langues/client.ts`) et ne sont jamais exposées au navigateur. Les seules variables `NEXT_PUBLIC_*` sont `NEXT_PUBLIC_APP_URL` et `NEXT_PUBLIC_DEMO_MODE`, qui ne sont pas secrètes.
 - Les comptes de démo ont des PIN connus, affichés sur `/connexion`. Mettez `NEXT_PUBLIC_DEMO_MODE=false` et ne lancez pas le seed pour une instance réelle.
 
 ## Limites connues

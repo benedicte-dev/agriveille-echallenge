@@ -62,4 +62,4 @@ Les prix de référence publics se trouvent sur `<URL>/marche`.
 2. Modifiez une culture (`/admin/cultures`) ou une fiche réglementaire (`/admin/reglementation`), puis montrez le résultat sur `<URL>/reglementation`.
 3. Terminez sur `<URL>/admin/audit` : chaque action de l'agent pendant la démo y figure.
 
-Si le temps le permet, montrez `<URL>/modelisation` (diagrammes UML).
+Si le temps le permet, montrez les diagrammes UML dans le dépôt (`docs/uml/README.md`).
