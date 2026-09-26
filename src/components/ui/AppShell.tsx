@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { IconMarque, IconMenu, icons, type IconComponent, type IconName } from "@/components/icons";
+import { IconMenu, icons, type IconComponent, type IconName } from "@/components/icons";
+import { BeninArms } from "@/components/brand/BeninArms";
 import { CountBadge } from "./Badge";
 import { NavLink } from "./NavLink";
 import { cx } from "./cx";
@@ -42,11 +43,13 @@ function renderIcon(icon: NavItem["icon"], size: number) {
 
 function Brand({ href, brand }: { href: string; brand: string }) {
   return (
-    <Link href={href} className="inline-flex min-h-touch items-center gap-2 rounded-lg pr-2 text-lg font-bold text-ink no-underline">
-      <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-on-primary">
-        <IconMarque size={24} />
+    <Link href={href} className="group inline-flex min-h-touch items-center gap-3 rounded-lg pr-2 text-ink no-underline">
+      <BeninArms size={40} alt="Armoiries de la République du Bénin" className="transition-transform duration-300 group-hover:-rotate-3" />
+      <span aria-hidden="true" className="h-8 w-px bg-line" />
+      <span className="flex flex-col leading-none">
+        <span className="font-[family-name:var(--font-display)] text-xl font-extrabold tracking-tight">{brand}</span>
+        <span className="mt-1 text-[0.7rem] font-semibold tracking-[0.14em] text-ink-muted uppercase">République du Bénin</span>
       </span>
-      <span>{brand}</span>
     </Link>
   );
 }
@@ -172,27 +175,28 @@ export type PublicShellProps = {
   /** Pied de page (liens réglementation, vérifier une quittance, mention démo). */
   footer?: ReactNode;
   /** Largeur du contenu : "narrow" (768 px, parcours fermier) ou "wide" (1280 px). */
-  width?: "narrow" | "wide";
+  width?: "narrow" | "wide" | "full";
   children: ReactNode;
 };
 
 /** Coquille des pages publiques (accueil, connexion, réglementation, marché, vérification). */
 export function PublicShell({ homeHref = "/", brand = "AgriVeille", headerEnd, footer, width = "narrow", children }: PublicShellProps) {
   const w = width === "narrow" ? "max-w-3xl" : "max-w-7xl";
+  const full = width === "full";
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="border-b border-line bg-surface">
-        <div className={cx("mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-1.5", w)}>
+        <div className={cx("mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-1.5 sm:px-6", full ? "max-w-7xl" : w)}>
           <Brand href={homeHref} brand={brand} />
           {headerEnd ? <div className="flex flex-wrap items-center gap-2">{headerEnd}</div> : null}
         </div>
       </header>
-      <main id="contenu" tabIndex={-1} className={cx("mx-auto w-full flex-1 px-4 py-6 outline-none", w)}>
+      <main id="contenu" tabIndex={-1} className={cx("w-full flex-1 outline-none", full ? "" : cx("mx-auto px-4 py-6 sm:px-6", w))}>
         {children}
       </main>
       {footer ? (
         <footer className="border-t border-line bg-sunken">
-          <div className={cx("mx-auto px-4 py-6 text-sm text-ink-muted", w)}>{footer}</div>
+          <div className={cx("mx-auto px-4 py-8 text-sm text-ink-muted sm:px-6", full ? "max-w-7xl" : w)}>{footer}</div>
         </footer>
       ) : null}
     </div>

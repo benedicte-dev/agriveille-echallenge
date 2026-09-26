@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ContrastToggle, LanguageSwitcher, PublicShell } from "@/components/ui";
-import { IconQr, IconRegle, IconVendre, IconGraphique } from "@/components/icons";
+import { IconQr, IconRegle, IconVendre } from "@/components/icons";
 import { setLocaleAction } from "@/lib/i18n/actions";
 import { getCurrentUser, homePathForRole } from "@/lib/auth";
 import { getTranslator, isHighContrast } from "./i18n";
@@ -12,11 +12,11 @@ import { getTranslator, isHighContrast } from "./i18n";
  */
 export async function PublicFrame({
   children,
-  width = "narrow",
+  width = "wide",
   showLanguage = true,
 }: {
   children: ReactNode;
-  width?: "narrow" | "wide";
+  width?: "narrow" | "wide" | "full";
   /** L'accueil affiche déjà le grand choix de langue. */
   showLanguage?: boolean;
 }) {
@@ -64,15 +64,14 @@ export async function PublicFrame({
                   {tr("nav.verify")}
                 </Link>
               </li>
-              <li>
-                <Link href="/modelisation" className={footerLink}>
-                  <IconGraphique size={22} />
-                  {tr("pub.modeling")}
-                </Link>
-              </li>
             </ul>
           </nav>
-          <p>{tr("pub.demo_notice")}</p>
+          <p className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span>{tr("pub.demo_notice")}</span>
+            <Link href="/credits" className="font-semibold text-primary">
+              {tr("credits.link")}
+            </Link>
+          </p>
         </div>
       }
     >

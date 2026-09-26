@@ -4,6 +4,7 @@ import { Callout, PageHeader } from "@/components/ui";
 import { prisma } from "@/lib/db";
 import { getCurrentUser, homePathForRole } from "@/lib/auth";
 import { PublicFrame } from "@/server/content/ui/PublicFrame";
+import { AuthSplit } from "@/server/content/ui/AuthSplit";
 import { getTranslator, listenLabels } from "@/server/content/ui/i18n";
 import { RegisterForm, type CommuneOption } from "./RegisterForm";
 
@@ -23,6 +24,7 @@ export default async function RegisterPage() {
 
   return (
     <PublicFrame>
+      <AuthSplit photo="/images/fermes/igname-atacora.webp" alt={tr("home.photos.igname")} caption={tr("auth.register_caption")}>
       <PageHeader
         title={tr("auth.register_title")}
         subtitle={tr("pub.register.subtitle")}
@@ -37,6 +39,7 @@ export default async function RegisterPage() {
           {tr("pub.register.unavailable")}
         </Callout>
       )}
+      </AuthSplit>
     </PublicFrame>
   );
 }

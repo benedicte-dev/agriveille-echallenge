@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/ui";
 import { getCurrentUser, homePathForRole } from "@/lib/auth";
 import { PublicFrame } from "@/server/content/ui/PublicFrame";
+import { AuthSplit } from "@/server/content/ui/AuthSplit";
 import { getTranslator, listenLabels } from "@/server/content/ui/i18n";
 import { nextAllowedForRole, safeNextPath } from "@/server/content/safe-next";
 import { LoginForm, type DemoAccount } from "./LoginForm";
@@ -32,6 +33,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const { locale, tr, audio } = await getTranslator();
   return (
     <PublicFrame>
+      <AuthSplit photo="/images/fermes/cultures-boukoumbe.webp" alt={tr("home.benefit.alerts.photo")} caption={tr("auth.split_caption")}>
       <PageHeader
         title={tr("auth.title")}
         subtitle={tr("auth.welcome")}
@@ -40,6 +42,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         listen={{ text: `${tr("auth.welcome")}. ${tr("auth.phone")}`, lang: locale, audioSrc: audio("auth.welcome"), labels: listenLabels(tr) }}
       />
       <LoginForm next={next} demoAccounts={demoAccounts(tr)} />
+      </AuthSplit>
     </PublicFrame>
   );
 }
