@@ -1,0 +1,9 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    { "label": "Base de données (Docker)", "type": "shell", "command": "docker start agriveille-db", "problemMatcher": [] },
+    { "label": "Dev", "type": "shell", "command": "pnpm dev", "isBackground": true, "dependsOn": "Base de données (Docker)", "problemMatcher": [] },
+    { "label": "UML : générer les images", "type": "shell", "command": "pnpm uml:render", "problemMatcher": [] },
+    { "label": "Tests", "type": "shell", "command": "pnpm test", "group": "test", "problemMatcher": [] }
+  ]
+}

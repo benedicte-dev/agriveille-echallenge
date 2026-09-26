@@ -48,7 +48,7 @@ Next.js 16 (App Router), React 19, TypeScript strict, Tailwind CSS v4, PostgreSQ
 4. Les services externes (Open-Meteo, 229langues) sont appelés côté serveur uniquement, avec délai borné et repli.
 5. Le client est une PWA : service worker, file IndexedDB, synthèse vocale locale en secours.
 
-Pour le détail, voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), les diagrammes UML dans [docs/uml/](docs/uml/README.md) et la page `/modelisation` de l'application. La spécification de référence se trouve dans [docs/SPEC.md](docs/SPEC.md), le script de démonstration dans [docs/DEMO.md](docs/DEMO.md) et les mesures de sécurité dans [docs/SECURITY.md](docs/SECURITY.md).
+Pour le détail, voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), les diagrammes UML dans [docs/uml/](docs/uml/README.md) (images générées par `pnpm uml:render`). La spécification de référence se trouve dans [docs/SPEC.md](docs/SPEC.md), le script de démonstration dans [docs/DEMO.md](docs/DEMO.md) et les mesures de sécurité dans [docs/SECURITY.md](docs/SECURITY.md).
 
 ## Démarrage local
 
@@ -72,7 +72,6 @@ Exemple de `DATABASE_URL` locale : `postgresql://agriveille:<mot-de-passe-local>
 ```bash
 pnpm test         # tests unitaires Vitest (src/**/*.test.ts)
 pnpm typecheck    # tsc --noEmit
-pnpm test:e2e     # Playwright (e2e/)
 ```
 
 ## Comptes de démo
@@ -98,7 +97,6 @@ Ces comptes n'existent que pour la démonstration. La page `/connexion` les affi
    - `LANGUES_API_BASE`, `LANGUES_API_KEY`, `LANGUES_HF_TOKEN` (fon, yoruba et audio)
    - `NEXT_PUBLIC_APP_URL` (origine publique inscrite dans les QR ; à défaut, l'hôte de la requête)
    - `NEXT_PUBLIC_DEMO_MODE` (`false` masque les comptes de démo)
-   - `NEXT_PUBLIC_REPO_URL` (lien vers le dépôt sur `/modelisation`)
 3. Migrations : le script `vercel-build` (`scripts/vercel-build.sh`) lance `prisma migrate deploy` à chaque déploiement, par la connexion directe `DATABASE_URL_UNPOOLED`. Pour charger les données de démo, définissez `SEED_ON_DEPLOY=1` le temps d'un déploiement, puis retirez-la.
 4. Cron : `vercel.json` appelle `GET /api/cron/monitoring` tous les jours à 06:00 UTC (07:00 à Cotonou). Vercel envoie `Authorization: Bearer $CRON_SECRET`. La route purge aussi les compteurs de limitation de débit.
 

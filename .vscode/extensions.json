@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "bierner.markdown-mermaid",
+    "mermaidchart.vscode-mermaid-chart",
+    "prisma.prisma",
+    "bradlc.vscode-tailwindcss",
+    "dbaeumer.vscode-eslint"
+  ]
+}

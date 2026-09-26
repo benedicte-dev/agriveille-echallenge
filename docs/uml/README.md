@@ -13,12 +13,26 @@ Diagrammes en Mermaid, rendus directement par GitHub. Ils documentent l'architec
 
 Chaque séquence comporte une description, ses préconditions, ses postconditions et un tableau d'exceptions.
 
-Validation : les 9 blocs Mermaid (7 ici, 2 dans `ARCHITECTURE.md`) passent l'analyseur `mermaid.parse` (mermaid 12.0.0).
-Les SVG ne sont pas encore générés dans `svg/` : `mmdc` a besoin de Chrome, qui n'a pas pu être installé dans le temps imparti.
-Pour les produire (hors du projet, sans toucher à `package.json`) :
+Validation : les 9 blocs Mermaid (7 ici, 2 dans `ARCHITECTURE.md`) passent l'analyseur `mermaid.parse`.
 
-```sh
-npx -y @mermaid-js/mermaid-cli@latest -i docs/uml/02-classes.md -o docs/uml/svg/02-classes.svg
-```
+## Images
 
-Sur un fichier Markdown, `mmdc` produit un SVG par bloc Mermaid, suffixé `-1`, `-2`…
+Les images SVG et PNG sont dans [`img/`](img/). Pour les régénérer : `pnpm uml:render`
+(ou, dans VS Code, la tâche « UML : générer les images »). Le script utilise
+`@mermaid-js/mermaid-cli` via `pnpm dlx`, sans l'ajouter aux dépendances. Dans VS Code,
+l'extension recommandée `bierner.markdown-mermaid` affiche aussi les diagrammes dans l'aperçu Markdown.
+
+### 01 · Cas d'utilisation
+![Cas d'utilisation](img/01-cas-utilisation-1.svg)
+
+### 02 · Classes
+![Classes : vue d'ensemble](img/02-classes-1.svg)
+![Classes : noyau et monitoring](img/02-classes-2.svg)
+![Classes : marché et recettes](img/02-classes-3.svg)
+![Classes : contenu et sécurité](img/02-classes-4.svg)
+
+### 03 · Séquence : alerte climatique automatique
+![Séquence alerte climatique](img/03-sequence-alerte-climatique-1.svg)
+
+### 04 · Séquence : signalement, validation, alerte de zone
+![Séquence signalement ravageur](img/04-sequence-signalement-ravageur-1.svg)

@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Next.js : serveur (debug)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm dev"
+    },
+    {
+      "name": "Next.js : navigateur (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000"
+    }
+  ]
+}
