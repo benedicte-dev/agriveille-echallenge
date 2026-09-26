@@ -1,6 +1,6 @@
 # Rapport de traduction automatique (fr → fon, yo)
 
-Généré le 2026-09-26T09:20:43.186Z par `scripts/i18n/translate-messages.ts`.
+Généré le 2026-09-26T09:26:28.349Z par `scripts/i18n/translate-messages.ts`.
 
 > **Avertissement honnête.** Ces traductions sortent d'un moteur automatique (API 229langues).
 > Elles n'ont été relues par **aucune personne locutrice** du fon ni du yoruba. Elles peuvent
@@ -13,15 +13,15 @@ Généré le 2026-09-26T09:20:43.186Z par `scripts/i18n/translate-messages.ts`.
 
 | | fon | yo |
 |---|---|---|
-| Clés au total | 832 | 832 |
-| Traduites | 826 | 826 |
+| Clés au total | 904 | 904 |
+| Traduites | 898 | 898 |
 | Recopiées telles quelles (noms propres, unités) | 6 | 6 |
 | Repli français | 0 | 0 |
 | Traduction identique au français | 2 | 2 |
 
-Appels API (cette exécution) : 11 (dont 10 réussis), durée moyenne 39368 ms, max 68558 ms.
-Durée totale : 421 s (débit volontairement limité à ~5 appels/min).
-Cumul de toutes les exécutions (translate + batch) : 26 appels réussis, durée moyenne 42221 ms, max 74389 ms.
+Appels API (cette exécution) : 4 (dont 4 réussis), durée moyenne 31415 ms, max 55927 ms.
+Durée totale : 131 s (débit volontairement limité à ~5 appels/min).
+Cumul de toutes les exécutions (translate + batch) : 30 appels réussis, durée moyenne 40781 ms, max 74389 ms.
 Les textes déjà en cache disque ne repartent pas vers l'API : une relance peut faire 0 appel.
 Un lot de 50 textes est un seul appel : la durée moyenne par appel inclut donc 50 traductions.
 
