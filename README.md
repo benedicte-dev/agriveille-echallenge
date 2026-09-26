@@ -99,7 +99,7 @@ Ces comptes n'existent que pour la démonstration. La page `/connexion` les affi
    - `NEXT_PUBLIC_APP_URL` (origine publique inscrite dans les QR ; à défaut, l'hôte de la requête)
    - `NEXT_PUBLIC_DEMO_MODE` (`false` masque les comptes de démo)
    - `NEXT_PUBLIC_REPO_URL` (lien vers le dépôt sur `/modelisation`)
-3. Appliquez les migrations avec `pnpm db:deploy`, puis, pour une instance de démonstration, `pnpm db:seed`.
+3. Migrations : le script `vercel-build` (`scripts/vercel-build.sh`) lance `prisma migrate deploy` à chaque déploiement, par la connexion directe `DATABASE_URL_UNPOOLED`. Pour charger les données de démo, définissez `SEED_ON_DEPLOY=1` le temps d'un déploiement, puis retirez-la.
 4. Cron : `vercel.json` appelle `GET /api/cron/monitoring` tous les jours à 06:00 UTC (07:00 à Cotonou). Vercel envoie `Authorization: Bearer $CRON_SECRET`. La route purge aussi les compteurs de limitation de débit.
 
 `.env.example` contient aussi `SESSION_SECRET` et `LANGUES_PROJECT_ID`, que le code actuel ne lit pas : les sessions reposent sur des jetons aléatoires stockés en base.
