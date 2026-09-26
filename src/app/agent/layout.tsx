@@ -25,6 +25,7 @@ export default async function AgentLayout({ children }: { children: ReactNode })
     { href: "/agent/alertes", label: tr("agt.nav.alerts"), icon: "alerte" },
     { href: "/agent/recettes", label: tr("agent.revenue"), icon: "payer" },
     { href: "/agent/sms", label: tr("agt.nav.sms"), icon: "telephone" },
+    { href: "/agent/profil", label: tr("profile.title"), icon: "utilisateur" },
   ];
   if (user.role === "ADMIN") items.push({ href: "/admin", label: tr("admin.title"), icon: "regle" });
 

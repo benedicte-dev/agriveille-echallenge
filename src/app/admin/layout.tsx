@@ -24,6 +24,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     { href: "/admin/redevances", label: tr("adm.nav.levies"), icon: "payer" },
     { href: "/admin/audit", label: tr("admin.audit"), icon: "horloge" },
     { href: "/agent", label: tr("adm.nav.agent_space"), icon: "carte", exact: true },
+    { href: "/agent/profil", label: tr("profile.title"), icon: "utilisateur" },
   ];
   return (
     <StaffShell user={user} items={items} homeHref="/admin">
