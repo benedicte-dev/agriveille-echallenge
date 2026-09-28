@@ -34,6 +34,15 @@ export type ListenButtonProps = {
 
 type Status = "idle" | "loading" | "playing" | "error";
 
+/**
+ * WAV silencieux de 8 échantillons. Joué dans le geste de l'utilisateur pour « déverrouiller »
+ * l'élément audio : iOS Safari et Chrome Android refusent play() si le son arrive plusieurs
+ * secondes après le toucher (le temps que 229langues réponde). Le même élément, déjà autorisé,
+ * lit ensuite l'audio reçu.
+ */
+const SILENT_WAV =
+  "data:audio/wav;base64,UklGRjQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YRAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
 /** Cache mémoire des blobs TTS (clé lang + texte) pour la durée de la page. */
 const blobCache = new Map<string, string>();
 const TTS_TIMEOUT_MS = 60_000; // premier appel 229langues jusqu'à 60 s (SPEC §5)
@@ -67,17 +76,32 @@ export function ListenButton({ text, lang, audioSrc, labels: labelsProp, variant
   // Démontage ou changement de texte : on coupe la lecture en cours.
   useEffect(() => stop, [currentKey]);
 
-  function playUrl(url: string) {
-    const audio = new Audio(url);
+  /** À appeler de façon synchrone dans le gestionnaire de clic (geste utilisateur). */
+  function unlockAudio(): HTMLAudioElement {
+    const audio = new Audio();
+    audio.preload = "auto";
+    audio.src = SILENT_WAV;
+    audio.play().then(
+      () => audio.pause(),
+      () => {},
+    );
+    audioRef.current = audio;
+    return audio;
+  }
+
+  function playUrl(url: string, audio: HTMLAudioElement = audioRef.current ?? new Audio()) {
     audioRef.current = audio;
     audio.onended = () => setStatus("idle");
     audio.onerror = () => setStatus("error");
+    audio.src = url;
     setStatus("playing");
     audio.play().catch(() => setStatus("error"));
   }
 
   async function start() {
-    if (audioSrc) return playUrl(audioSrc);
+    // Français : speechSynthesis, pas d'élément audio. Sinon, déverrouillage immédiat (geste).
+    const audio = audioSrc || lang !== "fr" ? unlockAudio() : null;
+    if (audioSrc && audio) return playUrl(audioSrc, audio);
 
     if (lang === "fr") {
       if (!("speechSynthesis" in window)) return setStatus("error");
@@ -96,7 +120,7 @@ export function ListenButton({ text, lang, audioSrc, labels: labelsProp, variant
 
     const key = `${lang}:${text}`;
     const cached = blobCache.get(key);
-    if (cached) return playUrl(cached);
+    if (cached && audio) return playUrl(cached, audio);
 
     const ctrl = new AbortController();
     abortRef.current = ctrl;
@@ -116,7 +140,7 @@ export function ListenButton({ text, lang, audioSrc, labels: labelsProp, variant
       }
       const url = URL.createObjectURL(blob);
       blobCache.set(key, url);
-      if (abortRef.current === ctrl) playUrl(url);
+      if (abortRef.current === ctrl && audio) playUrl(url, audio);
     } catch {
       if (abortRef.current === ctrl) setStatus("error");
     } finally {

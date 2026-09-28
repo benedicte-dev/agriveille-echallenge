@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
-import { limitScope } from "@/lib/security/rate-limit";
+import { getClientIpFromHeaders, limitScope, rateLimit } from "@/lib/security";
 import { tts } from "@/server/langues";
 import { jsonError, tooMany, voiceFailure } from "../_lib/respond";
 
@@ -8,12 +8,16 @@ import { jsonError, tooMany, voiceFailure } from "../_lib/respond";
  * Proxy de synthèse vocale 229langues (SPEC §5). Contrat ListenButton :
  * POST {text ≤ 1000, lang: "fon"|"yo"} → octets audio bruts (audio/wav ou audio/mpeg).
  * Toute erreur est un JSON générique non 2xx : le bouton affiche « Voix pas disponible ».
+ * Ouvert aux visiteurs (accueil, réglementation lues à voix haute) : limite par IP plus
+ * stricte que pour un compte ; l'audio est de toute façon mis en cache (AudioCache).
  */
 export const dynamic = "force-dynamic";
 // Premier appel 229langues : jusqu'à 60 s (démarrage à froid du modèle).
 export const maxDuration = 60;
 
 const MAX_BODY_BYTES = 8 * 1024;
+/** Visiteur non connecté : 30 lectures par heure et par adresse IP. */
+const ANON_LIMIT = { limit: 30, windowMs: 60 * 60_000 };
 
 const bodySchema = z.object({
   text: z.string().trim().min(1).max(1000),
@@ -22,7 +26,6 @@ const bodySchema = z.object({
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
-  if (!user) return jsonError(401, "unauthorized");
 
   const declared = Number(request.headers.get("content-length") ?? "0");
   if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) return jsonError(413, "payload_too_large");
@@ -44,7 +47,9 @@ export async function POST(request: Request) {
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) return jsonError(400, "invalid_input");
 
-  const limit = await limitScope("tts", user.id);
+  const limit = user
+    ? await limitScope("tts", user.id)
+    : await rateLimit(`tts-anon:${getClientIpFromHeaders(request.headers)}`, ANON_LIMIT);
   if (!limit.allowed) return tooMany(limit.retryAfterMs);
 
   try {
