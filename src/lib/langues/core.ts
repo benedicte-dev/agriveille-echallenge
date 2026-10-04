@@ -15,6 +15,9 @@ import { z } from "zod";
 
 /* ------------------------------------------------------------------ types */
 
+/** Délai de la synthèse vocale : tient dans maxDuration = 60 s de /api/voice/tts. */
+const TTS_TIMEOUT_MS = 50_000;
+
 /** Langues cibles de la traduction (codes de l'API : fon, yo). */
 export type TargetLang = "fon" | "yo";
 /** Langues vocales côté application (mappées vers fon / yoruba pour l'API). */
@@ -212,19 +215,19 @@ export function createLanguesClient(config: LanguesConfig) {
   };
 
   /** Une tentative : délai, statut, classement de l'erreur. */
-  async function attempt(path: string, init: RequestInit): Promise<Response> {
+  async function attempt(path: string, init: RequestInit, callTimeoutMs = timeoutMs): Promise<Response> {
     let res: Response;
     try {
       res = await doFetch(`${base}${path}`, {
         ...init,
         headers: { ...authHeaders, ...(init.headers as Record<string, string> | undefined) },
-        signal: AbortSignal.timeout(timeoutMs),
+        signal: AbortSignal.timeout(callTimeoutMs),
         cache: "no-store",
       });
     } catch (err) {
       const name = (err as { name?: string } | null)?.name;
       if (name === "TimeoutError" || name === "AbortError") {
-        throw new LanguesError("TIMEOUT", `délai dépassé (${timeoutMs} ms) sur ${path}`, {
+        throw new LanguesError("TIMEOUT", `délai dépassé (${callTimeoutMs} ms) sur ${path}`, {
           retryable: true,
           cause: err,
         });
@@ -253,12 +256,17 @@ export function createLanguesClient(config: LanguesConfig) {
   }
 
   /** Tentatives avec backoff exponentiel + gigue. */
-  async function request(path: string, init: () => RequestInit): Promise<Response> {
+  async function request(
+    path: string,
+    init: () => RequestInit,
+    opts: { timeoutMs?: number; retries?: number } = {},
+  ): Promise<Response> {
+    const maxRetries = opts.retries ?? retries;
     let lastErr: unknown;
-    for (let i = 0; i <= retries; i++) {
+    for (let i = 0; i <= maxRetries; i++) {
       const started = Date.now();
       try {
-        return await attempt(path, init());
+        return await attempt(path, init(), opts.timeoutMs);
       } catch (err) {
         lastErr = err;
         const le = err instanceof LanguesError ? err : null;
@@ -269,7 +277,7 @@ export function createLanguesClient(config: LanguesConfig) {
           status: le?.status,
           ms: Date.now() - started,
         });
-        if (!le?.retryable || i === retries) break;
+        if (!le?.retryable || i === maxRetries) break;
         const exp = backoffMs * 2 ** i + Math.floor(Math.random() * backoffMs);
         const wait =
           le.code === "RATE_LIMITED" && le.retryAfterMs !== undefined
@@ -405,11 +413,17 @@ export function createLanguesClient(config: LanguesConfig) {
     }
 
     const path = "/api/v1/tts";
-    const res = await request(path, () => ({
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: source, language: API_VOICE_LANG[lang] }),
-    }));
+    // La synthèse fon prend souvent 15 à 40 s : une seule tentative longue tient dans les
+    // 60 s de la fonction ; plusieurs tentatives courtes échouaient toutes.
+    const res = await request(
+      path,
+      () => ({
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: source, language: API_VOICE_LANG[lang] }),
+      }),
+      { timeoutMs: TTS_TIMEOUT_MS, retries: 0 },
+    );
     const data = Buffer.from(await res.arrayBuffer());
     const mime = sniffAudio(data);
     if (!mime) {
